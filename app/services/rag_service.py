@@ -2,12 +2,30 @@ from qdrant_client import QdrantClient
 from sentence_transformers import SentenceTransformer
 from dotenv import load_dotenv
 import os
+import google.generativeai as genai
+import os
+
+from prompts import build_prompt
 
 load_dotenv()
 
 
 print("URL:", os.getenv("QDRANT_URL"))
 print("KEY:", os.getenv("QDRANT_API_KEY"))
+
+
+
+
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+gemini_model  = genai.GenerativeModel("gemini-2.5-flash")
+
+def call_llm(prompt: str) -> str:
+    response = gemini_model.generate_content(prompt)
+
+    if response.text:
+        return response.text
+    else:
+        return response.candidates[0].content.parts[0].text
 
 # Load once (VERY IMPORTANT)
 client = QdrantClient(
@@ -39,9 +57,20 @@ def build_context(results):
     return context
 
 
-def get_answer(query: str) -> str:
+def get_answer(query: str):
     results = search(query)
     context = build_context(results)
 
-    # 🔴 TEMP (until you connect LLM)
-    return f"Context retrieved:\n\n{context}"
+    prompt = build_prompt(context, query)
+    answer = call_llm(prompt)
+
+    return {
+        "answer": answer,
+        "sources": [
+            {
+                "article": r.payload["article_number"],
+                "english": r.payload["english_text"]
+            }
+            for r in results
+        ]
+    }
