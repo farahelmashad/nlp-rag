@@ -9,11 +9,6 @@ load_dotenv()
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-# print("URL:", os.getenv("QDRANT_URL"))
-# print("KEY:", os.getenv("QDRANT_API_KEY"))
-
-
-
 
 def call_llm(prompt: str, normal_chat: bool = False) -> str:
     system = (
@@ -31,8 +26,8 @@ def call_llm(prompt: str, normal_chat: bool = False) -> str:
     return response.choices[0].message.content
 
 client = QdrantClient(
-    url=os.getenv("QDRANT_URL"),
-    api_key=os.getenv("QDRANT_API_KEY")
+    url=os.getenv("QDRANT_URL", "http://qdrant:6333"),
+    api_key=os.getenv("QDRANT_API_KEY") or None
 )
 
 model = SentenceTransformer('intfloat/multilingual-e5-small')
